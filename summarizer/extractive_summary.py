@@ -25,7 +25,7 @@ def compute_tfidf(sentences):
     tfidf_matrix=tfidf_vectorizer.fit_transform(sentences)
     return tfidf_matrix
 
-def extractive_summary(text, summary_ratio=0.3):
+def extractive_summary(text, summary_ratio=0.5):
     # Preprocessing the Text
     text=preprocess_text(text)
     # Ensuring text is not empty
