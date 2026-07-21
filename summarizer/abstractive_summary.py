@@ -1,18 +1,13 @@
 from transformers import PegasusTokenizer, PegasusForConditionalGeneration
 from nltk.tokenize import sent_tokenize
-import re
 
-def preprocess_text(text):
-    if not text:
-        return ''
-    text=text.lower()
-    #remove common filler words
-    filler_words=r'\b(um|uh|you know|actually|like|so|basically|seriously|literally)\b'
-    text=re.sub(filler_words,'',text)
-    #removing extra spaces
-    text=re.sub(r'\s+',' ',text).strip()
-    text=text.strip().replace("\n"," ")
-    return text
+"""Abstractive summary rephrasing module.
+
+This module receives extractive summary text and rephrases it using Pegasus.
+No additional text preprocessing is performed here, since preprocessing is handled
+upstream in the extractive summarizer.
+"""
+
 def split_large_text_pegasus(text, max_tokens=512, tokenizer=None):
     """Split text into manageable chunks if it exceeds the token limit."""
     sentences = sent_tokenize(text)
@@ -64,8 +59,7 @@ def abstractive_summary_single_chunk_pegasus(
     text, model, tokenizer, max_length=300, min_length=100, num_beams=7, repetition_penalty=1.1
 ):
     """Summarize a single chunk of text using Pegasus."""
-    preprocessed_text=preprocess_text(text)
-    inputs = tokenizer(preprocessed_text, truncation=True, return_tensors="pt", max_length=512)
+    inputs = tokenizer(text, truncation=True, return_tensors="pt", max_length=512)
     summary_ids = model.generate(
         inputs["input_ids"],
         max_length=max_length,
@@ -87,8 +81,8 @@ def sentence_case_summary(summary):
 def summarize_text(text, model_name='google/pegasus-xsum', max_length=300, min_length=100, num_beams=7):
     """Wrapper function for Pegasus summarization."""
     # Load the tokenizer and model
-    tokenizer = PegasusTokenizer.from_pretrained(model_name)
-    model = PegasusForConditionalGeneration.from_pretrained(model_name)
+    tokenizer = PegasusTokenizer.from_pretrained(model_name, force_download=True)
+    model = PegasusForConditionalGeneration.from_pretrained(model_name, force_download=True)
     # Generate the abstractive summary
     return abstractive_summary_chunks_pegasus(
         text, model, tokenizer, max_length=max_length, min_length=min_length, num_beams=num_beams
