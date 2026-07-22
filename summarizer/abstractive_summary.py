@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from transformers import PegasusTokenizer, PegasusForConditionalGeneration
 from nltk.tokenize import sent_tokenize
 
@@ -8,21 +10,26 @@ No additional text preprocessing is performed here, since preprocessing is handl
 upstream in the extractive summarizer.
 """
 
-_MODEL = None
-_TOKENIZER = None
 
-MODEL_PATH = "./models/pegasus-xsum"
+MODEL_NAME = "google/pegasus-xsum"
+MODEL_PATH = Path("./models/pegasus-xsum")
 
-def get_pegasus_model(model_name='google/pegasus-xsum'):
-    """Load the Pegasus model and tokenizer once and reuse them."""
-    global _MODEL, _TOKENIZER
-    if _MODEL is None or _TOKENIZER is None:
-        _TOKENIZER = PegasusTokenizer.from_pretrained(model_name,force_download=True)
-        _MODEL = PegasusForConditionalGeneration.from_pretrained(
-            model_name,
-            low_cpu_mem_usage=True,force_download=True
-        )
-    return _MODEL, _TOKENIZER
+
+def load_pegasus_model():
+    """Load Pegasus from the local cache or download it on demand."""
+    try:
+        tokenizer = PegasusTokenizer.from_pretrained(str(MODEL_PATH))
+        model = PegasusForConditionalGeneration.from_pretrained(str(MODEL_PATH))
+        return model, tokenizer
+    except (OSError, ValueError):
+        tokenizer = PegasusTokenizer.from_pretrained(MODEL_NAME)
+        model = PegasusForConditionalGeneration.from_pretrained(MODEL_NAME)
+
+        MODEL_PATH.mkdir(parents=True, exist_ok=True)
+        tokenizer.save_pretrained(str(MODEL_PATH))
+        model.save_pretrained(str(MODEL_PATH))
+        return model, tokenizer
+
 
 def split_large_text_pegasus(text, max_tokens=512, tokenizer=None):
     """Split text into manageable chunks if it exceeds the token limit."""
@@ -111,8 +118,7 @@ def sentence_case_summary(summary):
 
 def summarize_text(text, max_length=300, min_length=100, num_beams=7):
     """Wrapper function for Pegasus summarization."""
-    tokenizer=PegasusTokenizer.from_pretrained(MODEL_PATH)
-    model=PegasusForConditionalGeneration.from_pretrained(MODEL_PATH)
+    model, tokenizer = load_pegasus_model()
     return abstractive_summary_chunks_pegasus(
         text, model, tokenizer, max_length=max_length, min_length=min_length, num_beams=num_beams
     )
