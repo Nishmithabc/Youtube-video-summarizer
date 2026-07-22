@@ -87,7 +87,7 @@ def abstractive_summary_chunks_pegasus(
     )
 
 def abstractive_summary_single_chunk_pegasus(
-    text, model, tokenizer, max_length=300, min_length=100, num_beams=7, repetition_penalty=1.1
+    text, model, tokenizer, max_length=300, min_length=100, num_beams=5, repetition_penalty=1.1
 ):
     """Summarize a single chunk of text using Pegasus."""
     inputs = tokenizer(text, truncation=True, return_tensors="pt", max_length=512)
