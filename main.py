@@ -51,8 +51,8 @@ def fetch_transcript(video_url):
             st.session_state.transcript_ready = True
             st.success("Transcript retrieved successfully using API!")
             return
-    except Exception:
-        pass
+    except Exception as e:
+        st.error(f"Error fetching transcript via API: {e}")
 
     try:
         from transcript.transcriber import transcribe_from_youtube
